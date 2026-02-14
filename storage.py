@@ -124,6 +124,46 @@ def storage_path_exists(user_id: str, rel_path: str) -> bool:
     return (ROOT / "users" / user_id / rel_path).exists()
 
 
+def storage_read_global(rel_path: str) -> Optional[bytes]:
+    """读取全局文件（非用户隔离）。blob 路径为 global/<rel_path>。"""
+    blob_key = _blob_path("global", rel_path)
+    if _use_blob:
+        data = _read_blob(blob_key)
+        if data is not None:
+            return data
+    local = ROOT / "global" / rel_path
+    return _read_local(local)
+
+
+def storage_write_global(rel_path: str, data: bytes) -> None:
+    """写入全局文件。"""
+    blob_key = _blob_path("global", rel_path)
+    if _use_blob:
+        if _write_blob(blob_key, data):
+            return
+    local = ROOT / "global" / rel_path
+    try:
+        _write_local(local, data)
+    except OSError as e:
+        raise RuntimeError(f"Local write failed for global/{rel_path}: {e}") from e
+
+
+def storage_read_json_global(rel_path: str, default=None):
+    """读取全局 JSON 文件。"""
+    data = storage_read_global(rel_path)
+    if data is None:
+        return default if default is not None else {}
+    try:
+        return json.loads(data.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return default if default is not None else {}
+
+
+def storage_write_json_global(rel_path: str, obj: dict) -> None:
+    """写入全局 JSON 文件。"""
+    storage_write_global(rel_path, json.dumps(obj, ensure_ascii=False, indent=2).encode("utf-8"))
+
+
 def get_user_dir(user_id: str) -> Path:
     """返回本地用户目录（用于 export 时写入 chat_logs 等，或本地模式）"""
     return ROOT / "users" / user_id

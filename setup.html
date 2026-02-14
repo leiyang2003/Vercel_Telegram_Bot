@@ -67,6 +67,7 @@
         <button type="button" class="btn-save" id="btnSave">保存</button>
         <button type="button" class="btn-secondary" id="btnExport">导出运行命令</button>
         <a href="#" id="btnDownload" class="btn-secondary" style="text-decoration:none;line-height:2;" download>下载配置包</a>
+        <button type="button" class="btn-secondary" id="btnRegisterWebhook">启用 Vercel Webhook</button>
       </div>
       <div id="saveMessage" class="hint" style="margin-top: var(--gap-md);"></div>
       <pre id="exportOutput"></pre>
@@ -83,6 +84,7 @@
   const formPersonaFilename = document.getElementById("formPersonaFilename");
   const btnSave = document.getElementById("btnSave");
   const btnExport = document.getElementById("btnExport");
+  const btnRegisterWebhook = document.getElementById("btnRegisterWebhook");
   const saveMessage = document.getElementById("saveMessage");
   const exportOutput = document.getElementById("exportOutput");
 
@@ -194,6 +196,23 @@
   }
 
   btnExport.addEventListener("click", function () { doExport(formSlot.value); });
+
+  btnRegisterWebhook.addEventListener("click", function () {
+    const slotId = formSlot.value;
+    setMessage("注册中…", "");
+    fetch("/api/bots/" + slotId + "/register-webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({}),
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }).catch(function () { return { ok: r.ok, data: {} }; }); })
+      .then(function (res) {
+        if (res.ok) { setMessage(res.data.message || "Webhook 已启用", "success"); }
+        else { setMessage(res.data.error || "注册失败", "error"); }
+      })
+      .catch(function () { setMessage("注册失败", "error"); });
+  });
 
   document.getElementById("btnDownload").addEventListener("click", function (e) {
     e.preventDefault();

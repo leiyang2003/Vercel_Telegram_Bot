@@ -4,14 +4,17 @@ Bot 配置服务：按 user_id 隔离。
 """
 import json
 import os
+import uuid
 from pathlib import Path
-
+import requests
 from dotenv import load_dotenv
 
 from storage import (
     storage_read_json,
     storage_write_json,
     storage_write_text,
+    storage_read_json_global,
+    storage_write_json_global,
     get_user_dir,
     ensure_user_dirs,
 )
@@ -30,6 +33,7 @@ SHARED_ENV_KEYS = (
 )
 
 CONFIG_REL = "telegram_bots_config.json"
+WEBHOOK_INDEX_REL = "webhook_index.json"
 
 
 def _user_dir(user_id: str) -> Path:
@@ -106,6 +110,8 @@ def save_agent(
         (persona_text or "").strip() or "You are a helpful assistant.",
     )
 
+    existing_agent = agents[existing_idx] if existing_idx is not None else None
+    webhook_secret = (existing_agent or {}).get("webhook_secret") or str(uuid.uuid4())
     agent = {
         "id": slot_id,
         "name": name,
@@ -114,6 +120,7 @@ def save_agent(
         "persona_text": (persona_text or "").strip(),
         "persona_filename": persona_filename,
         "workspace": f"workspace/{slot_id}",
+        "webhook_secret": webhook_secret,
     }
     if existing_idx is not None:
         agents[existing_idx] = agent
@@ -121,6 +128,11 @@ def save_agent(
         agents.append(agent)
     config["agents"] = agents
     save_config(user_id, config)
+    index = storage_read_json_global(WEBHOOK_INDEX_REL, {})
+    if not isinstance(index, dict):
+        index = {}
+    index[webhook_secret] = {"user_id": user_id, "slot_id": slot_id}
+    storage_write_json_global(WEBHOOK_INDEX_REL, index)
     return True, f"Saved {name} ({slot_id})."
 
 
@@ -152,6 +164,24 @@ def get_agents_for_display(user_id: str) -> list[dict]:
                 "configured": False,
             })
     return out
+
+
+def get_agent_by_webhook_secret(webhook_secret: str) -> tuple[str, str, dict] | None:
+    """Look up (user_id, slot_id, agent_dict) by webhook_secret. Returns None if not found."""
+    index = storage_read_json_global(WEBHOOK_INDEX_REL, {})
+    if not isinstance(index, dict):
+        return None
+    entry = index.get(webhook_secret)
+    if not entry or not isinstance(entry, dict):
+        return None
+    user_id = entry.get("user_id")
+    slot_id = entry.get("slot_id")
+    if not user_id or not slot_id:
+        return None
+    agent = get_agent_by_id(user_id, slot_id)
+    if not agent:
+        return None
+    return (user_id, slot_id, agent)
 
 
 def get_agent_detail(user_id: str, slot_id: str) -> dict | None:
@@ -242,3 +272,37 @@ def get_run_package(user_id: str, slot_id: str) -> dict | None:
             "4. cd telegramBOT && python QX.py"
         ),
     }
+
+
+def register_webhook(user_id: str, slot_id: str, base_url: str) -> tuple[bool, str]:
+    """
+    Register Telegram webhook for this agent. base_url e.g. https://your-app.vercel.app.
+    Returns (ok, message).
+    """
+    agent = get_agent_by_id(user_id, slot_id)
+    if not agent:
+        return False, f"Agent {slot_id} not found."
+    secret = agent.get("webhook_secret")
+    if not secret:
+        return False, "No webhook_secret (save the agent again)."
+    token = (agent.get("telegram_bot_token") or "").strip()
+    if not token:
+        return False, "Telegram Bot Token is missing."
+    base_url = (base_url or "").rstrip("/")
+    if not base_url:
+        return False, "Base URL (VERCEL_URL) is required."
+    webhook_url = f"{base_url}/api/telegram/webhook/{secret}"
+    try:
+        r = requests.post(
+            f"https://api.telegram.org/bot{token}/setWebhook",
+            params={"url": webhook_url},
+            timeout=15,
+        )
+        data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        if not r.ok:
+            return False, data.get("description", r.text or f"HTTP {r.status_code}")
+        if not data.get("ok"):
+            return False, data.get("description", "setWebhook failed")
+        return True, "Webhook registered."
+    except requests.RequestException as e:
+        return False, str(e)

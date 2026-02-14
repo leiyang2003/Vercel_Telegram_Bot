@@ -15,9 +15,11 @@ from bot_service import (
     SLOT_IDS,
     get_agents_for_display,
     get_agent_detail,
+    get_agent_by_webhook_secret,
     save_agent,
     export_run_command,
     get_run_package,
+    register_webhook,
 )
 
 app = Flask(__name__, static_folder=None)
@@ -205,6 +207,51 @@ def api_bots_download(slot_id):
             "Content-Disposition": f"attachment; filename=bot_config_{slot_id}.json",
         },
     )
+
+
+@app.route("/api/bots/<slot_id>/register-webhook", methods=["POST"])
+def api_bots_register_webhook(slot_id):
+    """Register Telegram webhook for this bot (requires login)."""
+    user_id = _require_login()
+    if not user_id:
+        return jsonify({"error": "login_required"}), 401
+    if slot_id not in SLOT_IDS:
+        return jsonify({"error": "invalid_slot"}), 400
+    base_url = (request.get_json(silent=True) or {}).get("base_url", "").strip()
+    if not base_url:
+        base_url = os.environ.get("VERCEL_URL", "").strip()
+        if base_url and not base_url.startswith("http"):
+            base_url = f"https://{base_url}"
+    if not base_url:
+        return jsonify({"error": "base_url or VERCEL_URL required"}), 400
+    ok, msg = register_webhook(user_id, slot_id, base_url)
+    if not ok:
+        return jsonify({"error": msg}), 400
+    return jsonify({"ok": True, "message": msg})
+
+
+@app.route("/api/telegram/webhook/<webhook_secret>", methods=["POST"])
+def api_telegram_webhook(webhook_secret):
+    """Receive Telegram updates (no auth; path secret is the credential)."""
+    lookup = get_agent_by_webhook_secret(webhook_secret)
+    if not lookup:
+        return "", 404
+    user_id, slot_id, agent = lookup
+    try:
+        data = request.get_json(force=True, silent=True) or request.get_data(as_text=True)
+        if isinstance(data, str) and data.strip():
+            import json as _json
+            data = _json.loads(data)
+        if not data:
+            return "", 200
+    except Exception:
+        return "", 200
+    try:
+        from webhook_handler import handle_webhook_update
+        handle_webhook_update(user_id, slot_id, agent, data)
+    except Exception:
+        pass
+    return "", 200
 
 
 # --- Static (Vercel 自动从 public/ 提供 /base.css 等；本地由 Flask 提供) ---

@@ -48,14 +48,20 @@ vercel
 | `GOOGLE_CLIENT_SECRET` | Google OAuth 密钥 |
 | `SECRET_KEY` | Flask 会话签名（随机长字符串） |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob 读写令牌（必填，否则数据不持久） |
+| `VERCEL_URL` | 部署后自动存在；用于 Webhook 注册（若未设置，注册时需前端传 base_url） |
+| `XAI_API_KEY`、`GROK_CHAT_MODEL` 等 | 可选；Grok 对话与记忆提取用，见 bot_service.SHARED_ENV_KEYS |
 
-### 3. Vercel Blob
+### 3. 在 Vercel 上运行 Bot（Webhook）
+
+保存 Bot 后，在 Setup 页点击 **「启用 Vercel Webhook」**，将 Telegram 的 webhook 指向当前部署。之后用户发消息会由 Vercel 接收并处理（无需本地运行 QX.py）。注意：Vercel 函数超时（Hobby 约 10s，Pro 约 60s），长回复可能需要 Pro；/snap 暂不支持 webhook 模式。
+
+### 4. Vercel Blob
 
 1. 在 Vercel 项目中打开 **Storage** → **Create Database** → 选择 **Blob**
 2. 创建后复制 `BLOB_READ_WRITE_TOKEN` 到环境变量
 3. 用户配置、Persona 将持久化到 Blob
 
-### 4. Google OAuth 回调
+### 5. Google OAuth 回调
 
 在 [Google Cloud Console](https://console.cloud.google.com/) → 凭据 → OAuth 2.0 客户端 → 已授权的重定向 URI 中添加：
 
