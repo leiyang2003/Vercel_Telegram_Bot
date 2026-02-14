@@ -1,5 +1,5 @@
 {
   "framework": null,
-  "installCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\" && uv pip install -r requirements.txt",
+  "installCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && $HOME/.local/bin/uv venv .venv && $HOME/.local/bin/uv pip install -r requirements.txt --python .venv/bin/python",
   "buildCommand": "echo \"no build step\""
 }
