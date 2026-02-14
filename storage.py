@@ -39,15 +39,15 @@ def _read_blob(path: str) -> Optional[bytes]:
 
 
 def _write_blob(path: str, data: bytes) -> bool:
-    """写入 Blob"""
+    """写入 Blob。成功返回 True，失败抛出异常（带原始错误信息）"""
     if not _use_blob:
         return False
     try:
         import vercel_blob
         vercel_blob.put(path, data)
         return True
-    except Exception:
-        return False
+    except Exception as e:
+        raise RuntimeError(f"Blob write failed for {path}: {e}") from e
 
 
 def _read_local(path: Path) -> Optional[bytes]:
@@ -81,8 +81,12 @@ def storage_write(user_id: str, rel_path: str, data: bytes) -> None:
     if _use_blob:
         if _write_blob(blob_key, data):
             return
+        # Blob 写入失败会抛异常，不会走到这里
     local = ROOT / "users" / user_id / rel_path
-    _write_local(local, data)
+    try:
+        _write_local(local, data)
+    except OSError as e:
+        raise RuntimeError(f"Local write failed for {rel_path}: {e}") from e
 
 
 def storage_read_text(user_id: str, rel_path: str, default: str = "") -> str:

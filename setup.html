@@ -163,12 +163,21 @@
         persona_filename: formPersonaFilename.value || "persona.txt",
       }),
     })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (r) {
+        return r.text().then(function (text) {
+          try {
+            var d = text ? JSON.parse(text) : {};
+          } catch (e) {
+            return { ok: false, data: { error: "Server error (non-JSON). Status: " + r.status + (text ? ". " + text.slice(0, 200) : "") } };
+          }
+          return { ok: r.ok, data: d };
+        });
+      })
       .then(function (res) {
         if (res.ok) { setMessage(res.data.message || "保存成功", "success"); loadAgents(); }
         else { setMessage(res.data.error || res.data.message || "保存失败", "error"); }
       })
-      .catch(function () { setMessage("保存失败", "error"); });
+      .catch(function (err) { setMessage("保存失败: " + (err.message || "网络错误"), "error"); });
   });
 
   function doExport(slotId) {

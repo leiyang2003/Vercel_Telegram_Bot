@@ -156,14 +156,17 @@ def api_bots_save(slot_id):
     if slot_id not in SLOT_IDS:
         return jsonify({"error": "invalid_slot"}), 400
     data = request.get_json(force=True, silent=True) or {}
-    ok, msg = save_agent(
-        user_id,
-        slot_id,
-        data.get("name", ""),
-        data.get("telegram_bot_token", ""),
-        data.get("persona_text", ""),
-        data.get("persona_filename", "persona.txt"),
-    )
+    try:
+        ok, msg = save_agent(
+            user_id,
+            slot_id,
+            data.get("name", ""),
+            data.get("telegram_bot_token", ""),
+            data.get("persona_text", ""),
+            data.get("persona_filename", "persona.txt"),
+        )
+    except Exception as e:
+        return jsonify({"error": f"Storage error: {str(e)}"}), 500
     if not ok:
         return jsonify({"error": msg}), 400
     return jsonify({"ok": True, "message": msg})
