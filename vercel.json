@@ -1,4 +1,0 @@
-{
-  "installCommand": "pip install -r requirements.txt",
-  "buildCommand": "echo no build step"
-}
