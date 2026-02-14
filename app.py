@@ -233,30 +233,39 @@ def api_bots_register_webhook(slot_id):
 @app.route("/api/telegram/webhook/<webhook_secret>", methods=["POST"])
 def api_telegram_webhook(webhook_secret):
     """Receive Telegram updates (no auth; path secret is the credential)."""
+    print(f"[webhook] request received secret={webhook_secret[:8]}...")
     lookup = get_agent_by_webhook_secret(webhook_secret)
     if not lookup:
+        print("[webhook] 404 secret not in index")
         return "", 404
     user_id, slot_id, agent = lookup
+    print(f"[webhook] lookup ok user_id={user_id} slot_id={slot_id}")
     try:
-        data = request.get_json(force=True, silent=True) or request.get_data(as_text=True)
-        if isinstance(data, str) and data.strip():
-            import json as _json
-            data = _json.loads(data)
+        data = request.get_json(force=True, silent=True)
+        if data is None:
+            raw = request.get_data(as_text=True)
+            if raw and raw.strip():
+                import json as _json
+                data = _json.loads(raw)
         if not data:
+            print("[webhook] empty body, return 200")
             return "", 200
-    except Exception:
+    except Exception as e:
+        print(f"[webhook] body parse error: {e}")
         return "", 200
     try:
         from webhook_handler import handle_webhook_update
         handle_webhook_update(user_id, slot_id, agent, data)
+        print("[webhook] handler done")
     except Exception as e:
         import traceback
+        print(f"[webhook] handler error: {e}")
         traceback.print_exc()
         try:
             from webhook_handler import _send_error_fallback
             _send_error_fallback(agent.get("telegram_bot_token"), data, str(e))
-        except Exception:
-            pass
+        except Exception as e2:
+            print(f"[webhook] fallback send failed: {e2}")
     return "", 200
 
 

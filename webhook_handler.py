@@ -125,8 +125,10 @@ async def _send_text_chunked(bot, chat_id: int, text: str) -> None:
 
 def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: dict) -> None:
     """Process one Telegram Update. Sync workspace/state, run handlers, persist. Blocking."""
+    print(f"[webhook_handler] start user_id={user_id} slot_id={slot_id}")
     token = (agent.get("telegram_bot_token") or "").strip()
     if not token:
+        print("[webhook_handler] no token, exit")
         return
     persona_text = (agent.get("persona_text") or "").strip() or "You are a helpful assistant."
     request_id = str(uuid.uuid4())[:8]
@@ -202,6 +204,7 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
                 await _send_text_chunked(context.bot, chat_id, full_reply or "（无回复）")
             except Exception as e:
                 err_msg = str(e)[:500] if str(e) else "Unknown error"
+                print(f"[webhook_handler] handle_message error: {err_msg}")
                 fallback = (
                     "Reply failed. If on Vercel, set XAI_API_KEY in Project Settings → Environment Variables. "
                     f"Error: {err_msg}"
@@ -239,6 +242,7 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
                 await app.shutdown()
 
         asyncio.run(run_update())
+        print("[webhook_handler] process_update done")
 
         _save_state(user_id, slot_id, user_states)
         _sync_workspace_to_blob(user_id, slot_id, tmp_workspace)
