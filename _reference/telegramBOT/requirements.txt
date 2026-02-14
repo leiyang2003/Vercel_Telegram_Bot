@@ -1,0 +1,6 @@
+gradio>=4.0.0
+requests>=2.28.0
+python-dotenv>=1.0.0
+python-telegram-bot>=21.0
+dashscope>=1.23.4
+openai>=1.0.0

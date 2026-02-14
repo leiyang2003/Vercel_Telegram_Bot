@@ -1,0 +1,61 @@
+/**
+ * Vercel Telegram Bot 设计系统
+ */
+:root {
+  --color-link: #06c;
+  --color-text: #333;
+  --color-text-body: #444;
+  --color-text-muted: #555;
+  --color-hint: #666;
+  --color-error: #c00;
+  --color-border: #ccc;
+  --color-bg: #f5f5f5;
+  --font-sans: "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-size-h1: 1.35rem;
+  --font-size-h2: 1.1rem;
+  --font-size-body: 0.95rem;
+  --font-size-small: 0.9rem;
+  --gap-sm: 0.5rem;
+  --gap-md: 0.75rem;
+  --gap-lg: 1rem;
+  --gap-xl: 1.5rem;
+  --radius-md: 8px;
+  --page-padding-home: 1.5rem;
+  --app-accent: #2563EB;
+  --app-bg-page: #F8F9FA;
+  --app-card-border: #E9ECEF;
+  --app-text: #212529;
+  --app-text-muted: #6C757D;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem var(--page-padding-home);
+  max-width: 960px;
+  margin: 0 auto;
+  background: #fff;
+  border-bottom: 1px solid var(--app-card-border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.brand { font-size: 1.5rem; font-weight: 700; color: #1E40AF; text-decoration: none; }
+.brand:hover { color: #1D4ED8; }
+#auth-header { display: inline-flex; align-items: center; gap: var(--gap-md); font-size: var(--font-size-small); color: var(--app-text-muted); }
+.auth-btn-login { padding: 6px 12px; border-radius: var(--radius-md); border: 1px solid var(--app-card-border); background: #fff; color: var(--app-text); text-decoration: none; }
+.auth-btn-login:hover { background: var(--color-bg); color: var(--app-accent); }
+.auth-user { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-logout { color: var(--app-accent); text-decoration: none; }
+.auth-logout:hover { text-decoration: underline; }
+.hint { color: var(--color-hint); font-size: var(--font-size-small); }
+.error { color: var(--color-error); }
+.btn-save { padding: var(--gap-sm) var(--gap-lg); border-radius: var(--radius-md); font-size: var(--font-size-small); cursor: pointer; background: var(--app-accent); color: #fff; border: none; font-family: inherit; }
+.btn-save:hover { opacity: 0.9; }
+.btn-secondary { padding: var(--gap-sm) var(--gap-lg); border-radius: var(--radius-md); font-size: var(--font-size-small); cursor: pointer; background: #E9ECEF; color: var(--app-text); border: 1px solid var(--app-card-border); }
+.btn-secondary:hover { background: #DEE2E6; }
+.form-row { margin-bottom: var(--gap-md); }
+.form-row label { display: block; margin-bottom: 4px; font-size: var(--font-size-small); color: var(--app-text-muted); }
+.form-row input, .form-row textarea { width: 100%; padding: 8px 10px; border-radius: var(--radius-md); border: 1px solid var(--app-card-border); font-family: inherit; box-sizing: border-box; }
+.form-row textarea { min-height: 120px; resize: vertical; }
+.card { background: #fff; border: 1px solid var(--app-card-border); border-radius: 14px; padding: var(--gap-xl); margin-bottom: var(--gap-md); }
+.card h3 { margin: 0 0 var(--gap-sm); font-size: var(--font-size-h2); }

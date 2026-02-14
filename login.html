@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Vercel Telegram Bot</title>
+  <link rel="stylesheet" href="/base.css">
+  <style>
+    body { font-family: var(--font-sans); margin: 0; padding: 0; background: var(--app-bg-page); color: var(--app-text); }
+    .main { max-width: 400px; margin: 4rem auto; padding: var(--gap-xl); text-align: center; }
+    .main h1 { font-size: 1.5rem; margin-bottom: var(--gap-lg); }
+    .main p { color: var(--app-text-muted); margin-bottom: var(--gap-xl); }
+    .btn-login { display: inline-block; padding: 12px 24px; background: var(--app-accent); color: #fff; text-decoration: none; border-radius: var(--radius-md); font-size: 1rem; }
+    .btn-login:hover { opacity: 0.9; }
+    .error { color: var(--color-error); font-size: var(--font-size-small); margin-top: var(--gap-md); }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <h1>Vercel Telegram Bot</h1>
+    <p>登录以管理您的 Telegram Bot</p>
+    <a href="/login" class="btn-login">Login with Google</a>
+    <div id="error" class="error"></div>
+  </div>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "oauth_not_configured") {
+      document.getElementById("error").textContent = "Google OAuth 未配置，请在 .env 中设置 GOOGLE_CLIENT_ID 和 GOOGLE_CLIENT_SECRET";
+    }
+  </script>
+</body>
+</html>

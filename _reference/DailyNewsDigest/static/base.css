@@ -1,0 +1,244 @@
+/**
+ * DailyNewsDigest 设计系统 — 共享 token 与通用类
+ * 使用说明见项目根目录 STYLE.md
+ */
+
+:root {
+  /* 色彩 */
+  --color-link: #06c;
+  --color-text: #333;
+  --color-text-body: #444;
+  --color-text-muted: #555;
+  --color-hint: #666;
+  --color-error: #c00;
+  --color-border: #ccc;
+  --color-border-light: #eee;
+  --color-border-faint: #f0f0f0;
+  --color-bg: #f5f5f5;
+  --color-highlight: rgba(255, 220, 100, 0.45);
+
+  /* 字体 */
+  --font-sans: "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans-ja: "Hiragino Sans", "Yu Gothic", sans-serif;
+
+  /* 字号 */
+  --font-size-h1: 1.35rem;
+  --font-size-h1-home: 1.5rem;
+  --font-size-h2: 1.1rem;
+  --font-size-body: 0.95rem;
+  --font-size-small: 0.9rem;
+  --font-size-caption: 0.85rem;
+
+  /* 间距与圆角 */
+  --gap-sm: 0.5rem;
+  --gap-md: 0.75rem;
+  --gap-lg: 1rem;
+  --gap-xl: 1.5rem;
+  --radius-md: 8px;
+  --radius-sm: 2px;
+  --page-padding: 1rem;
+  --page-padding-home: 1.5rem;
+
+  /* 统一应用风格（原子新闻 / 各子页） */
+  --app-accent: #2563EB;
+  --app-bg-page: #F8F9FA;
+  --app-card-border: #E9ECEF;
+  --app-text: #212529;
+  --app-text-muted: #6C757D;
+}
+
+/* 统一顶栏与导航 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem var(--page-padding-home);
+  max-width: 960px;
+  margin: 0 auto;
+  background: #fff;
+  border-bottom: 1px solid var(--app-card-border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.brand {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1E40AF;
+  text-decoration: none;
+}
+.brand:hover {
+  color: #1D4ED8;
+}
+.nav-top {
+  display: flex;
+  gap: var(--gap-xl);
+  flex-wrap: wrap;
+}
+.nav-top a {
+  color: var(--app-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 4px 6px 6px;
+  margin: -4px -6px -6px;
+  border-bottom: 2px solid transparent;
+  font-weight: 400;
+}
+.nav-top a:hover {
+  color: var(--app-accent);
+}
+.nav-top a.active {
+  color: var(--app-accent);
+  font-weight: 700;
+  border-bottom-color: var(--app-accent);
+}
+
+/* 登录 / 用户状态（#auth-header 由 auth.js 注入） */
+#auth-header {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-md);
+  font-size: var(--font-size-small);
+  color: var(--app-text-muted);
+}
+.auth-btn-login {
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--app-card-border);
+  background: #fff;
+  color: var(--app-text);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: var(--font-size-small);
+}
+.auth-btn-login:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--app-accent);
+}
+.auth-user {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.auth-logout {
+  color: var(--app-accent);
+  text-decoration: none;
+}
+.auth-logout:hover {
+  text-decoration: underline;
+}
+
+/* 返回首页链接 */
+.back-link {
+  display: inline-block;
+  margin-bottom: var(--gap-md);
+  color: var(--color-link);
+  font-size: var(--font-size-small);
+  text-decoration: none;
+}
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* 工具栏（日期 + 按钮等） */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--gap-lg);
+}
+.toolbar label {
+  font-size: 0.9rem;
+  color: var(--app-text-muted);
+}
+.toolbar input[type="date"],
+.toolbar button {
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--app-card-border);
+  background: #fff;
+  color: var(--app-text);
+  font-family: inherit;
+}
+.toolbar button {
+  cursor: pointer;
+  background: #F8F9FA;
+}
+.toolbar button:hover {
+  background: #E9ECEF;
+  border-color: #DEE2E6;
+}
+
+/* 提示与错误文案 */
+.hint {
+  color: var(--color-hint);
+  font-size: var(--font-size-small);
+}
+.error {
+  color: var(--color-error);
+}
+
+/* 内容区基础（行高、字色） */
+.content {
+  margin-top: var(--gap-lg);
+  color: var(--color-text-body);
+  line-height: 1.5;
+}
+
+/* 通用按钮区域 */
+.buttons {
+  margin-top: var(--gap-lg);
+  display: flex;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+}
+.buttons button {
+  padding: var(--gap-sm) var(--gap-lg);
+  cursor: pointer;
+}
+
+/* 隐藏（用于 JS 切换显示） */
+.hidden {
+  display: none !important;
+}
+
+/* 响应式：平板/小屏笔记本 */
+@media (max-width: 768px) {
+  :root {
+    --page-padding-home: 1rem;
+    --page-padding: 0.75rem;
+    --font-size-h1-home: 1.35rem;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--gap-md);
+  }
+  .nav-top {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--gap-md);
+    padding-bottom: 4px;
+    width: 100%;
+  }
+  .nav-top a {
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .toolbar button {
+    min-height: 44px;
+  }
+}
+
+/* 响应式：手机 */
+@media (max-width: 480px) {
+  :root {
+    --page-padding-home: 0.75rem;
+  }
+}

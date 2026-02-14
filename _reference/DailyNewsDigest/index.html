@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily News Digest</title>
+  <link rel="stylesheet" href="/static/base.css">
+  <style>
+    body { font-family: var(--font-sans-ja); margin: 0; padding: 0; background: var(--app-bg-page); color: var(--app-text); }
+    .hero { max-width: 720px; margin: 0 auto; padding: var(--gap-xl) var(--page-padding-home); text-align: center; }
+    .hero h1 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 600; margin: 0 0 var(--gap-md); line-height: 1.4; color: var(--app-text); }
+    .hero .intro { color: var(--app-text-muted); font-size: var(--font-size-small); line-height: 1.6; margin: 0; }
+    .cards { max-width: 960px; margin: 0 auto; padding: var(--gap-xl) var(--page-padding-home); display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--gap-xl); }
+    .card { background: #fff; border: 1px solid var(--app-card-border); border-radius: 14px; padding: var(--gap-xl); box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .card-icon { width: 48px; height: 48px; margin-bottom: var(--gap-md); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .card-icon.blue { background: #EFF6FF; color: var(--app-accent); }
+    .card-icon.purple { background: #F5F3FF; color: #7c3aed; }
+    .card-icon.green { background: #dcfce7; color: #16a34a; }
+    .card h2 { font-size: var(--font-size-h2); font-weight: 600; margin: 0 0 var(--gap-sm); color: var(--app-text); }
+    .card p { font-size: var(--font-size-small); color: var(--app-text-muted); line-height: 1.5; margin: 0 0 var(--gap-md); }
+    .card a { font-size: var(--font-size-small); color: var(--app-accent); text-decoration: none; }
+    .card a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="brand">原子新闻</a>
+    <nav class="nav-top">
+      <a href="index.html" class="active">ホーム</a>
+      <a href="digest.html">ニュース概要</a>
+      <a href="podcast.html">ポッドキャスト台本</a>
+      <a href="sync_reader.html">同期朗読</a>
+      <a href="japanese_points.html">日本語学習</a>
+      <a href="settings.html" id="nav-settings" style="display: none;">設定</a>
+    </nav>
+    <span id="auth-header"></span>
+  </header>
+  <script src="/static/auth.js"></script>
+  <main class="hero">
+    <h1>毎日のニュースを、もっと深く、スマートに。</h1>
+    <p class="intro">好きなテーマで、世界の最新動向を日本語で、整理情報収集＋日本語学習を1つのプラットフォームで完結</p>
+  </main>
+  <section class="cards">
+    <article class="card">
+      <div class="card-icon blue" aria-hidden="true">📄</div>
+      <h2>ニュース摘要</h2>
+      <p>好きなテーマで<br>最新の情報を日本語でわかりやすくまとめる</p>
+      <a href="digest.html">詳細を見る &gt;</a>
+    </article>
+    <article class="card">
+      <div class="card-icon purple" aria-hidden="true">🎙</div>
+      <h2>ポッドキャスト台本</h2>
+      <p>当日のニュースを自然な日本語のナレーション台本として生成。</p>
+      <a href="podcast.html">詳細を見る &gt;</a>
+    </article>
+    <article class="card">
+      <div class="card-icon purple" aria-hidden="true">⏱</div>
+      <h2>同期朗読プレーヤー</h2>
+      <p>音声に合わせてテキストがハイライトされる直感的な学習体験。</p>
+      <a href="sync_reader.html">詳細を見る &gt;</a>
+    </article>
+    <article class="card">
+      <div class="card-icon green" aria-hidden="true">📖</div>
+      <h2>日本語要点学習</h2>
+      <p>N1-N2レベルの語彙と文法を抽出し、フラッシュカードで復習。</p>
+      <a href="japanese_points.html">詳細を見る &gt;</a>
+    </article>
+  </section>
+</body>
+</html>

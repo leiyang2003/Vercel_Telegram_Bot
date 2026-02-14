@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>設定 - Daily News Digest</title>
+  <link rel="stylesheet" href="/static/base.css">
+  <style>
+    body { font-family: var(--font-sans-ja); margin: 0; padding: 0; background: var(--app-bg-page); color: var(--app-text); }
+    .main { max-width: 640px; margin: 0 auto; padding: var(--gap-xl) var(--page-padding-home); }
+    .page-title { font-size: var(--font-size-h1-home); font-weight: 600; margin: 0 0 var(--gap-xl); color: var(--app-text); }
+    .settings-section { margin-bottom: var(--gap-xl); }
+    .settings-section h2 { font-size: var(--font-size-h2); font-weight: 600; margin: 0 0 var(--gap-md); color: var(--app-text); }
+    .settings-options { display: flex; gap: var(--gap-lg); flex-wrap: wrap; }
+    .settings-options label { display: flex; align-items: center; gap: var(--gap-sm); cursor: pointer; font-size: var(--font-size-body); }
+    .settings-options input[type="radio"] { accent-color: var(--app-accent); }
+    .btn-save { padding: var(--gap-sm) var(--gap-lg); border-radius: var(--radius-md); font-size: var(--font-size-small); cursor: pointer; background: var(--app-accent); color: #fff; border: none; font-family: inherit; }
+    .btn-save:hover { opacity: 0.9; }
+    #saveMessage { margin-top: var(--gap-md); font-size: var(--font-size-small); }
+    #saveMessage.success { color: var(--app-accent); }
+    #saveMessage.error { color: var(--color-error); }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); padding: var(--gap-sm) 0; }
+    .toggle-row label { display: flex; align-items: center; gap: var(--gap-sm); cursor: pointer; }
+    .toggle-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--app-accent); }
+    #interests-section { margin-bottom: var(--gap-xl); }
+    #interests-section .themes-tags { display: flex; flex-wrap: wrap; gap: var(--gap-sm); margin-top: var(--gap-md); }
+    #interests-section .theme-tag { padding: var(--gap-xs) var(--gap-sm); border-radius: var(--radius-md); background: var(--app-bg-card); font-size: var(--font-size-small); }
+    #interests-section textarea { width: 100%; min-height: 80px; padding: var(--gap-sm); border-radius: var(--radius-md); font-family: inherit; font-size: var(--font-size-body); box-sizing: border-box; }
+    #interests-section .login-hint { color: var(--app-text-muted); font-size: var(--font-size-small); }
+    #run-pipeline-section .run-message { margin-top: var(--gap-md); font-size: var(--font-size-small); }
+    #run-pipeline-section .run-message.success { color: var(--app-accent); }
+    #run-pipeline-section .run-message.error { color: var(--color-error); }
+    #runLog { margin-top: var(--gap-md); padding: var(--gap-md); border-radius: var(--radius-md); background: var(--app-bg-card); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; font-size: var(--font-size-small); white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="index.html" class="brand">原子新闻</a>
+    <nav class="nav-top">
+      <a href="index.html">ホーム</a>
+      <a href="digest.html">ニュース概要</a>
+      <a href="podcast.html">ポッドキャスト台本</a>
+      <a href="sync_reader.html">同期朗読</a>
+      <a href="japanese_points.html">日本語学習</a>
+      <a href="settings.html" class="active" id="nav-settings" style="display: none;">設定</a>
+    </nav>
+    <span id="auth-header"></span>
+  </header>
+  <script src="/static/auth.js"></script>
+  <main class="main">
+    <h1 class="page-title">ユーザー設定</h1>
+    <section class="settings-section" id="modules-section" style="display: none;">
+      <h2>機能のON/OFF</h2>
+      <p class="hint" style="margin-bottom: var(--gap-md);">実行したい機能を選択してください。矛盾する組み合わせは保存できません。</p>
+      <div class="toggle-row">
+        <label><input type="checkbox" id="modDigest"> ニュース概要（Digest）</label>
+      </div>
+      <div class="toggle-row">
+        <label><input type="checkbox" id="modPodcast"> Podcast</label>
+      </div>
+      <div class="toggle-row">
+        <label><input type="checkbox" id="modSync"> 同期朗読（音声 + sync JSON）</label>
+      </div>
+      <div class="toggle-row" style="padding-top: 0;">
+        <div class="hint">同期朗読の分割</div>
+        <label style="gap: var(--gap-md);">
+          <span style="display:flex; align-items:center; gap: var(--gap-sm);">
+            <input type="radio" name="tts_sync_chunking" id="ttsChunkAtomic" value="atomic">
+            atomic（原子分解）
+          </span>
+          <span style="display:flex; align-items:center; gap: var(--gap-sm);">
+            <input type="radio" name="tts_sync_chunking" id="ttsChunkSentence" value="sentence">
+            sentence（按句）
+          </span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <label><input type="checkbox" id="modJP"> Japanese points</label>
+      </div>
+      <div class="hint" id="modulesHint"></div>
+      <button type="button" class="btn-save" id="btnSave">保存</button>
+      <div id="saveMessage" class="hint"></div>
+    </section>
+    <section class="settings-section" id="interests-section" style="display: none;">
+      <h2>ニュースのテーマ（感兴趣的方向）</h2>
+      <p class="hint" style="margin-bottom: var(--gap-md);">関心のある分野を一文で入力すると、システムが3～4個のテーマを抽出し、以降の摘要に使います。</p>
+      <textarea id="interestsRaw" placeholder="例：动漫、游戏、科技、音乐" rows="3"></textarea>
+      <div style="margin-top: var(--gap-md);">
+        <button type="button" class="btn-save" id="btnSaveInterests">保存してテーマを抽出</button>
+        <span id="interestsMessage" class="hint" style="margin-left: var(--gap-md);"></span>
+      </div>
+      <div id="interestsThemes" class="themes-tags"></div>
+    </section>
+    <section class="settings-section" id="interests-login-hint" style="display: none;">
+      <p class="login-hint">ログインすると、ニュースのテーマ（感兴趣的方向）を設定できます。</p>
+    </section>
+    <section class="settings-section" id="run-pipeline-section" style="display: none;">
+      <h2>流水線を実行（启动流水线）</h2>
+      <p class="hint" style="margin-bottom: var(--gap-md);">保存したテーマに基づき、摘要 → 播客台本 → 音声・同期 → 日本語要点のフルパイプラインを1回実行します。テーマ未設定の場合はデフォルトの4テーマで実行されます。</p>
+      <button type="button" class="btn-save" id="btnRunPipeline">実行</button>
+      <div id="runPipelineMessage" class="run-message hint"></div>
+      <pre id="runLog" style="display:none;"></pre>
+    </section>
+    <section class="settings-section" id="run-pipeline-login-hint" style="display: none;">
+      <p class="login-hint">ログインすると、流水線を実行できます。</p>
+    </section>
+  </main>
+  <script>
+(function () {
+  const messageEl = document.getElementById("saveMessage");
+  const modulesSection = document.getElementById("modules-section");
+  const modulesHint = document.getElementById("modulesHint");
+  const modDigest = document.getElementById("modDigest");
+  const modPodcast = document.getElementById("modPodcast");
+  const modSync = document.getElementById("modSync");
+  const modJP = document.getElementById("modJP");
+  const ttsChunkAtomic = document.getElementById("ttsChunkAtomic");
+  const ttsChunkSentence = document.getElementById("ttsChunkSentence");
+  const fetchOpts = { credentials: "same-origin" };
+
+  function setMessage(text, type) {
+    messageEl.textContent = text;
+    messageEl.className = type === "success" ? "success" : type === "error" ? "error" : "hint";
+  }
+
+  function getModules() {
+    return {
+      digest: !!modDigest.checked,
+      podcast: !!modPodcast.checked,
+      sync_reader: !!modSync.checked,
+      japanese_points: !!modJP.checked
+    };
+  }
+
+  function validateModules(mods) {
+    if (mods.podcast && !mods.digest) return "不能保存：开启 Podcast 时必须开启「ニュース概要（Digest）」";
+    if (mods.sync_reader && !(mods.digest && mods.podcast)) return "不能保存：开启 同期朗読 时必须同时开启 Digest 与 Podcast";
+    if (mods.japanese_points && !mods.podcast) return "不能保存：开启 Japanese points 时必须开启 Podcast";
+    return "";
+  }
+
+  function getTtsChunking() {
+    if (ttsChunkSentence && ttsChunkSentence.checked) return "sentence";
+    return "atomic";
+  }
+
+  function setTtsChunking(value) {
+    const v = value === "sentence" ? "sentence" : "atomic";
+    if (ttsChunkAtomic) ttsChunkAtomic.checked = v === "atomic";
+    if (ttsChunkSentence) ttsChunkSentence.checked = v === "sentence";
+  }
+
+  function setChunkingEnabled(enabled) {
+    if (ttsChunkAtomic) ttsChunkAtomic.disabled = !enabled;
+    if (ttsChunkSentence) ttsChunkSentence.disabled = !enabled;
+  }
+
+  function renderModulesHint() {
+    const msg = validateModules(getModules());
+    modulesHint.textContent = msg || "";
+    modulesHint.className = msg ? "error" : "hint";
+    setChunkingEnabled(!!modSync.checked);
+  }
+
+  async function loadSettings() {
+    try {
+      const r = await fetch("/api/settings", fetchOpts);
+      if (r.status === 401) {
+        setMessage("ログインが必要です。", "error");
+        return;
+      }
+      const data = await r.json();
+      const mods = data.modules || {};
+      modDigest.checked = mods.digest !== false;
+      modPodcast.checked = mods.podcast !== false;
+      modSync.checked = mods.sync_reader !== false;
+      modJP.checked = mods.japanese_points !== false;
+      setTtsChunking(data.tts_sync_chunking || "atomic");
+      renderModulesHint();
+    } catch (e) {
+      setMessage("設定の読み込みに失敗しました。", "error");
+    }
+  }
+
+  document.getElementById("btnSave").addEventListener("click", async function () {
+    const mods = getModules();
+    const invalid = validateModules(mods);
+    if (invalid) {
+      setMessage(invalid, "error");
+      renderModulesHint();
+      return;
+    }
+    setMessage("保存中…", "");
+    try {
+      const r = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modules: mods, tts_sync_chunking: getTtsChunking() }),
+        credentials: "same-origin"
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(function () { return {}; });
+        throw new Error(err.message || err.error || "保存に失敗しました。");
+      }
+      setMessage("保存しました。", "success");
+    } catch (e) {
+      setMessage(e.message || "保存に失敗しました。", "error");
+    }
+  });
+
+  [modDigest, modPodcast, modSync, modJP, ttsChunkAtomic, ttsChunkSentence].forEach(function (el) {
+    if (!el) return;
+    el.addEventListener("change", renderModulesHint);
+  });
+
+  // modules section shown only when logged in (see /api/me below)
+
+  // 兴趣方向：仅登录用户可见，GET/POST /api/user/interests
+  (function () {
+    const section = document.getElementById("interests-section");
+    const loginHint = document.getElementById("interests-login-hint");
+    const rawEl = document.getElementById("interestsRaw");
+    const btnSave = document.getElementById("btnSaveInterests");
+    const messageEl = document.getElementById("interestsMessage");
+    const themesEl = document.getElementById("interestsThemes");
+    const fetchOpts = { credentials: "same-origin" };
+
+    function setInterestsMessage(text, type) {
+      messageEl.textContent = text;
+      messageEl.className = type === "success" ? "success" : type === "error" ? "error" : "hint";
+    }
+
+    function renderThemes(themes) {
+      themesEl.innerHTML = "";
+      (themes || []).forEach(function (t) {
+        var span = document.createElement("span");
+        span.className = "theme-tag";
+        span.textContent = t;
+        themesEl.appendChild(span);
+      });
+    }
+
+    function loadInterests() {
+      fetch("/api/user/interests", fetchOpts)
+        .then(function (r) {
+          if (r.status === 401) {
+            section.style.display = "none";
+            loginHint.style.display = "block";
+            return;
+          }
+          return r.json().then(function (data) {
+            section.style.display = "block";
+            loginHint.style.display = "none";
+            rawEl.value = data.raw || "";
+            renderThemes(data.themes || []);
+          });
+        })
+        .catch(function () {
+          section.style.display = "none";
+          loginHint.style.display = "block";
+        });
+    }
+
+    btnSave.addEventListener("click", function () {
+      var raw = rawEl.value.trim();
+      setInterestsMessage("保存中…", "");
+      fetch("/api/user/interests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raw_text: raw }),
+        credentials: "same-origin"
+      })
+        .then(function (r) {
+          if (r.status === 401) {
+            setInterestsMessage("ログインが必要です。", "error");
+            return;
+          }
+          return r.json().then(function (data) {
+            if (!r.ok) {
+              setInterestsMessage(data.message || data.error || "保存に失敗しました。", "error");
+              return;
+            }
+            renderThemes(data.themes || []);
+            setInterestsMessage("保存しました。", "success");
+          });
+        })
+        .catch(function () {
+          setInterestsMessage("保存に失敗しました。", "error");
+        });
+    });
+
+    fetch("/api/me", fetchOpts)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.logged_in) {
+          modulesSection.style.display = "block";
+          loadSettings();
+          loadInterests();
+          document.getElementById("run-pipeline-section").style.display = "block";
+          document.getElementById("run-pipeline-login-hint").style.display = "none";
+        } else {
+          modulesSection.style.display = "none";
+          section.style.display = "none";
+          loginHint.style.display = "block";
+          document.getElementById("run-pipeline-section").style.display = "none";
+          document.getElementById("run-pipeline-login-hint").style.display = "block";
+        }
+      })
+      .catch(function () {
+        modulesSection.style.display = "none";
+        section.style.display = "none";
+        loginHint.style.display = "block";
+        document.getElementById("run-pipeline-section").style.display = "none";
+        document.getElementById("run-pipeline-login-hint").style.display = "block";
+      });
+  })();
+
+  // 启动流水线：POST /api/run_daily，仅登录可见
+  (function () {
+    const btn = document.getElementById("btnRunPipeline");
+    const messageEl = document.getElementById("runPipelineMessage");
+    const logEl = document.getElementById("runLog");
+    if (!btn || !messageEl) return;
+    function setRunMessage(text, type) {
+      messageEl.textContent = text;
+      messageEl.className = "run-message " + (type === "success" ? "success" : type === "error" ? "error" : "hint");
+    }
+    function setLog(text) {
+      if (!logEl) return;
+      logEl.style.display = "block";
+      logEl.textContent = text || "";
+    }
+    let pollTimer = null;
+    function stopPoll() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+    function startPoll(reportDate) {
+      stopPoll();
+      let last = "";
+      pollTimer = setInterval(function () {
+        fetch("/api/run_daily/log?date=" + encodeURIComponent(reportDate) + "&tail=500", { credentials: "same-origin" })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.exists) return;
+            const content = data.content || "";
+            if (content && content !== last) {
+              last = content;
+              setLog(content);
+              if (content.indexOf(" pipeline completed") !== -1) {
+                setRunMessage("完了しました。", "success");
+                stopPoll();
+              }
+              if (content.indexOf(" fail ") !== -1) {
+                setRunMessage("失敗しました。ログを確認してください。", "error");
+                stopPoll();
+              }
+            }
+          })
+          .catch(function () { /* ignore */ });
+      }, 1200);
+    }
+    btn.addEventListener("click", function () {
+      setRunMessage("起動中…", "");
+      setLog("");
+      fetch("/api/run_daily", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" } })
+        .then(function (r) {
+          return r.json().then(function (data) {
+            if (r.status === 401) {
+              setRunMessage("ログインが必要です。", "error");
+              return;
+            }
+            if (!r.ok) {
+              setRunMessage(data.message || data.error || "流水線の起動に失敗しました。", "error");
+              return;
+            }
+            if (data.ok) {
+              setRunMessage("流水線を開始しました。進捗を表示します…", "success");
+              if (data.report_date) startPoll(data.report_date);
+            } else {
+              setRunMessage(data.message || data.error || "流水線の起動に失敗しました。", "error");
+            }
+          });
+        })
+        .catch(function () {
+          setRunMessage("流水線の起動に失敗しました。", "error");
+        });
+    });
+  })();
+})();
+  </script>
+</body>
+</html>
