@@ -1,4 +1,9 @@
 {
-  "buildCommand": "pip install -r requirements.txt",
+  "build": {
+    "env": {
+      "UV_SYSTEM_PYTHON": "1"
+    }
+  },
+  "buildCommand": "uv pip install -r requirements.txt --system",
   "framework": null
 }
