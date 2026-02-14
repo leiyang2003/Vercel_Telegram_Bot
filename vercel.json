@@ -1,10 +1,5 @@
 {
   "framework": null,
-  "build": {
-    "env": {
-      "UV_SYSTEM_PYTHON": "1"
-    }
-  },
-  "installCommand": "python -m pip install -U pip uv && uv pip install -r requirements.txt",
+  "installCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\" && uv pip install -r requirements.txt",
   "buildCommand": "echo \"no build step\""
 }
