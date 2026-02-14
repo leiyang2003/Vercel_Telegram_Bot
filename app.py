@@ -249,8 +249,14 @@ def api_telegram_webhook(webhook_secret):
     try:
         from webhook_handler import handle_webhook_update
         handle_webhook_update(user_id, slot_id, agent, data)
-    except Exception:
-        pass
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        try:
+            from webhook_handler import _send_error_fallback
+            _send_error_fallback(agent.get("telegram_bot_token"), data, str(e))
+        except Exception:
+            pass
     return "", 200
 
 

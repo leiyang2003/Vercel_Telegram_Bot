@@ -55,6 +55,8 @@ vercel
 
 保存 Bot 后，在 Setup 页点击 **「启用 Vercel Webhook」**，将 Telegram 的 webhook 指向当前部署。之后用户发消息会由 Vercel 接收并处理（无需本地运行 QX.py）。注意：Vercel 函数超时（Hobby 约 10s，Pro 约 60s），长回复可能需要 Pro；/snap 暂不支持 webhook 模式。
 
+**无回复时排查**：在 Vercel 项目 → Deployments → 选中最新部署 → Logs，看是否有报错；并在 Project Settings → Environment Variables 中确认已设置 `XAI_API_KEY`（Grok 对话必填）。
+
 ### 4. Vercel Blob
 
 1. 在 Vercel 项目中打开 **Storage** → **Create Database** → 选择 **Blob**

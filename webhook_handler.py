@@ -82,6 +82,40 @@ def _save_state(user_id: str, slot_id: str, state: dict) -> None:
 TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 
 
+def _chat_id_from_update(update_data: dict) -> int | None:
+    """Extract chat_id from Telegram Update dict."""
+    msg = update_data.get("message") or update_data.get("edited_message")
+    if msg:
+        chat = msg.get("chat")
+        if isinstance(chat, dict) and "id" in chat:
+            return chat["id"]
+    cb = update_data.get("callback_query")
+    if isinstance(cb, dict) and isinstance(cb.get("message"), dict):
+        chat = cb["message"].get("chat")
+        if isinstance(chat, dict) and "id" in chat:
+            return chat["id"]
+    return None
+
+
+def _send_error_fallback(token: str, update_data: dict, error_detail: str) -> None:
+    """Send a short error message to the user so they get some response. Runs sync."""
+    chat_id = _chat_id_from_update(update_data)
+    if not chat_id or not (token or "").strip():
+        return
+    msg = (
+        "Reply failed. Check your Vercel deployment logs. "
+        "Common cause: set XAI_API_KEY (and optionally GROK_CHAT_MODEL) in Vercel Environment Variables."
+    )
+    if len(error_detail) < 100:
+        msg += f" Error: {error_detail}"
+    try:
+        from telegram import Bot
+        bot = Bot(token=token.strip())
+        asyncio.run(bot.send_message(chat_id=chat_id, text=msg[:4000]))
+    except Exception:
+        pass
+
+
 async def _send_text_chunked(bot, chat_id: int, text: str) -> None:
     if not text:
         return
@@ -143,28 +177,36 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
             use_vector = os.environ.get("MEMORY_SEARCH_ENABLED", "").strip().lower() in ("1", "true", "yes")
             enable_skill = os.environ.get("SKILL_EXEC_ENABLED", "").strip().lower() in ("1", "true", "yes")
             full_reply = ""
-            from chat_core import stream_chat, _history_to_tuples, _append_conversation_log
-            for h, _m, _s, _wav in stream_chat(
-                state["character_prompt"],
-                state["history"],
-                user_msg,
-                enable_tts=False,
-                tts_api_key="",
-                tts_backend="dashscope",
-                chat_backend="grok",
-                xai_api_key=os.environ.get("XAI_API_KEY", ""),
-                use_memory=True,
-                use_vector_search=use_vector,
-                enable_skill_exec=enable_skill,
-            ):
-                if h:
-                    pairs = _history_to_tuples(h)
-                    if pairs:
-                        last_user, last_asst = pairs[-1]
-                        full_reply = last_asst or ""
-                        state["history"] = [(u, a) for u, a in pairs]
-            _append_conversation_log(state["character_prompt"], user_msg, full_reply)
-            await _send_text_chunked(context.bot, chat_id, full_reply)
+            try:
+                from chat_core import stream_chat, _history_to_tuples, _append_conversation_log
+                for h, _m, _s, _wav in stream_chat(
+                    state["character_prompt"],
+                    state["history"],
+                    user_msg,
+                    enable_tts=False,
+                    tts_api_key="",
+                    tts_backend="dashscope",
+                    chat_backend="grok",
+                    xai_api_key=os.environ.get("XAI_API_KEY", ""),
+                    use_memory=True,
+                    use_vector_search=use_vector,
+                    enable_skill_exec=enable_skill,
+                ):
+                    if h:
+                        pairs = _history_to_tuples(h)
+                        if pairs:
+                            last_user, last_asst = pairs[-1]
+                            full_reply = last_asst or ""
+                            state["history"] = [(u, a) for u, a in pairs]
+                _append_conversation_log(state["character_prompt"], user_msg, full_reply)
+                await _send_text_chunked(context.bot, chat_id, full_reply or "（无回复）")
+            except Exception as e:
+                err_msg = str(e)[:500] if str(e) else "Unknown error"
+                fallback = (
+                    "Reply failed. If on Vercel, set XAI_API_KEY in Project Settings → Environment Variables. "
+                    f"Error: {err_msg}"
+                )
+                await _send_text_chunked(context.bot, chat_id, fallback[:4000])
 
         def _clear_workspace_memory(workspace_dir: Path) -> None:
             try:
