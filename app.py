@@ -223,6 +223,8 @@ def api_bots_register_webhook(slot_id):
         if base_url and not base_url.startswith("http"):
             base_url = f"https://{base_url}"
     if not base_url:
+        base_url = (request.host_url or "").rstrip("/")
+    if not base_url:
         return jsonify({"error": "base_url or VERCEL_URL required"}), 400
     ok, msg = register_webhook(user_id, slot_id, base_url)
     if not ok:
@@ -230,11 +232,26 @@ def api_bots_register_webhook(slot_id):
     return jsonify({"ok": True, "message": msg})
 
 
+_DEBUG_LOG = "/Users/leiyang/Desktop/Coding/.cursor/debug.log"
+
+def _dlog(msg: str, data: dict, hypothesis_id: str, location: str = ""):
+    try:
+        import json as _j
+        import time as _t
+        with open(_DEBUG_LOG, "a") as _f:
+            _f.write(_j.dumps({"id": f"log_{int(_t.time()*1000)}", "timestamp": int(_t.time()*1000), "location": location or "app", "message": msg, "data": data, "hypothesisId": hypothesis_id}) + "\n")
+    except Exception:
+        pass
+
+
 @app.route("/api/telegram/webhook/<webhook_secret>", methods=["POST"])
 def api_telegram_webhook(webhook_secret):
     """Receive Telegram updates (no auth; path secret is the credential)."""
+    # #region agent log
     print(f"[webhook] request received secret={webhook_secret[:8]}...")
     lookup = get_agent_by_webhook_secret(webhook_secret)
+    _dlog("webhook_lookup", {"secret_prefix": webhook_secret[:8], "lookup_ok": lookup is not None}, "H1", "app.py:webhook_lookup")
+    # #endregion
     if not lookup:
         print("[webhook] 404 secret not in index")
         return "", 404
@@ -247,6 +264,9 @@ def api_telegram_webhook(webhook_secret):
             if raw and raw.strip():
                 import json as _json
                 data = _json.loads(raw)
+        # #region agent log
+        _dlog("webhook_body", {"body_empty": data is None or not data, "data_keys": list(data.keys()) if isinstance(data, dict) else None}, "H2", "app.py:webhook_body")
+        # #endregion
         if not data:
             print("[webhook] empty body, return 200")
             return "", 200
@@ -257,15 +277,27 @@ def api_telegram_webhook(webhook_secret):
         from webhook_handler import handle_webhook_update
         handle_webhook_update(user_id, slot_id, agent, data)
         print("[webhook] handler done")
+        # #region agent log
+        _dlog("webhook_handler_done", {"user_id": user_id, "slot_id": slot_id}, "H3", "app.py:webhook_done")
+        # #endregion
     except Exception as e:
         import traceback
         print(f"[webhook] handler error: {e}")
+        # #region agent log
+        _dlog("webhook_handler_error", {"error": str(e)[:200], "error_type": type(e).__name__}, "H3", "app.py:webhook_error")
+        # #endregion
         traceback.print_exc()
         try:
             from webhook_handler import _send_error_fallback
             _send_error_fallback(agent.get("telegram_bot_token"), data, str(e))
+            # #region agent log
+            _dlog("webhook_fallback_sent", {}, "H3", "app.py:fallback")
+            # #endregion
         except Exception as e2:
             print(f"[webhook] fallback send failed: {e2}")
+            # #region agent log
+            _dlog("webhook_fallback_failed", {"error": str(e2)[:200]}, "H3", "app.py:fallback_fail")
+            # #endregion
     return "", 200
 
 

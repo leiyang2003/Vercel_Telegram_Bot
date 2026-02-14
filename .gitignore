@@ -1,6 +1,7 @@
 .env
 __pycache__/
 users/
+global/
 # 参考备份中的配置文件可能含 token，提交前请确认
 _reference/telegramBOT/telegram_bots_config.json
 *.pyc

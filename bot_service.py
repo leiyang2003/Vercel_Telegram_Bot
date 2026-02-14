@@ -303,6 +303,8 @@ def register_webhook(user_id: str, slot_id: str, base_url: str) -> tuple[bool, s
     base_url = (base_url or "").rstrip("/")
     if not base_url:
         return False, "Base URL (VERCEL_URL) is required."
+    if not base_url.lower().startswith("https://"):
+        return False, "Telegram requires HTTPS for webhooks. On Vercel set VERCEL_URL; locally use an HTTPS URL (e.g. ngrok) and pass base_url in the request body."
     webhook_url = f"{base_url}/api/telegram/webhook/{secret}"
     try:
         r = requests.post(

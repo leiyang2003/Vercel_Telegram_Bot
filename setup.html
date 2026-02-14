@@ -67,6 +67,8 @@
         <button type="button" class="btn-save" id="btnSave">保存</button>
         <button type="button" class="btn-secondary" id="btnExport">导出运行命令</button>
         <a href="#" id="btnDownload" class="btn-secondary" style="text-decoration:none;line-height:2;" download>下载配置包</a>
+        <label for="webhookBaseUrl" style="display:block;margin-top:var(--gap-md);font-size:0.9rem;">Webhook 基址（本地/ngrok 时必填）</label>
+        <input type="text" id="webhookBaseUrl" placeholder="https://xxx.ngrok-free.dev 或留空（Vercel 自动）" style="width:100%;max-width:400px;margin-top:4px;padding:6px 8px;">
         <button type="button" class="btn-secondary" id="btnRegisterWebhook">启用 Vercel Webhook</button>
       </div>
       <div id="saveMessage" class="hint" style="margin-top: var(--gap-md);"></div>
@@ -200,11 +202,15 @@
   btnRegisterWebhook.addEventListener("click", function () {
     const slotId = formSlot.value;
     setMessage("注册中…", "");
+    var body = {};
+    var baseUrl = (document.getElementById("webhookBaseUrl").value || "").trim();
+    if (baseUrl) body.base_url = baseUrl;
+    else if (window.location.protocol === "https:") body.base_url = window.location.origin;
     fetch("/api/bots/" + slotId + "/register-webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({}),
+      body: JSON.stringify(body),
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }).catch(function () { return { ok: r.ok, data: {} }; }); })
       .then(function (res) {

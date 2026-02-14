@@ -123,8 +123,23 @@ async def _send_text_chunked(bot, chat_id: int, text: str) -> None:
         await bot.send_message(chat_id, text[i : i + TELEGRAM_MAX_MESSAGE_LENGTH])
 
 
+_DEBUG_LOG = "/Users/leiyang/Desktop/Coding/.cursor/debug.log"
+
+def _dlog(msg: str, data: dict, hypothesis_id: str, location: str = ""):
+    try:
+        import json as _j
+        import time as _t
+        with open(_DEBUG_LOG, "a") as _f:
+            _f.write(_j.dumps({"id": f"log_{int(_t.time()*1000)}", "timestamp": int(_t.time()*1000), "location": location or "webhook_handler", "message": msg, "data": data, "hypothesisId": hypothesis_id}) + "\n")
+    except Exception:
+        pass
+
+
 def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: dict) -> None:
     """Process one Telegram Update. Sync workspace/state, run handlers, persist. Blocking."""
+    # #region agent log
+    _dlog("handler_start", {"user_id": user_id, "slot_id": slot_id, "update_keys": list(update_data.keys()) if isinstance(update_data, dict) else None}, "H3", "webhook_handler.py:start")
+    # #endregion
     print(f"[webhook_handler] start user_id={user_id} slot_id={slot_id}")
     token = (agent.get("telegram_bot_token") or "").strip()
     if not token:
@@ -136,6 +151,9 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
     tmp_base.mkdir(parents=True, exist_ok=True)
     try:
         tmp_workspace = _sync_workspace_from_blob(user_id, slot_id, tmp_base)
+        # #region agent log
+        _dlog("handler_after_sync", {"workspace_path": str(tmp_workspace)}, "H3", "webhook_handler.py:after_sync")
+        # #endregion
         os.environ["CHATBOT_WORKSPACE"] = str(tmp_workspace)
         for key in ("XAI_API_KEY", "GROK_CHAT_MODEL", "OPENAI_API_KEY", "DASHSCOPE_API_KEY", "SKILL_EXEC_ENABLED", "MEMORY_SEARCH_ENABLED"):
             if key in os.environ:
@@ -172,6 +190,9 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
         async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id = update.effective_chat.id
             user_msg = (update.message.text or "").strip()
+            # #region agent log
+            _dlog("handle_message_enter", {"chat_id": chat_id, "user_msg_len": len(user_msg)}, "H4", "webhook_handler.py:handle_message_enter")
+            # #endregion
             if not user_msg:
                 return
             state = get_state(chat_id)
@@ -204,12 +225,18 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
                 await _send_text_chunked(context.bot, chat_id, full_reply or "（无回复）")
             except Exception as e:
                 err_msg = str(e)[:500] if str(e) else "Unknown error"
+                # #region agent log
+                _dlog("handle_message_error", {"error": err_msg[:200], "error_type": type(e).__name__}, "H4", "webhook_handler.py:handle_message_error")
+                # #endregion
                 print(f"[webhook_handler] handle_message error: {err_msg}")
                 fallback = (
                     "Reply failed. If on Vercel, set XAI_API_KEY in Project Settings → Environment Variables. "
                     f"Error: {err_msg}"
                 )
                 await _send_text_chunked(context.bot, chat_id, fallback[:4000])
+                # #region agent log
+                _dlog("handle_message_fallback_sent", {"chat_id": chat_id}, "H4", "webhook_handler.py:fallback_sent")
+                # #endregion
 
         def _clear_workspace_memory(workspace_dir: Path) -> None:
             try:
@@ -233,6 +260,9 @@ def handle_webhook_update(user_id: str, slot_id: str, agent: dict, update_data: 
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
         update_obj = Update.de_json(update_data, bot)
+        # #region agent log
+        _dlog("handler_before_process", {"has_message": getattr(update_obj, "message", None) is not None, "effective_chat_id": getattr(update_obj.effective_chat, "id", None) if getattr(update_obj, "effective_chat", None) else None}, "H5", "webhook_handler.py:before_process")
+        # #endregion
 
         async def run_update():
             await app.initialize()
