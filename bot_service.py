@@ -277,14 +277,26 @@ def get_run_package(user_id: str, slot_id: str) -> dict | None:
 def register_webhook(user_id: str, slot_id: str, base_url: str) -> tuple[bool, str]:
     """
     Register Telegram webhook for this agent. base_url e.g. https://your-app.vercel.app.
-    Returns (ok, message).
+    Returns (ok, message). Backfills webhook_secret if missing (agents saved before webhook support).
     """
     agent = get_agent_by_id(user_id, slot_id)
     if not agent:
         return False, f"Agent {slot_id} not found."
     secret = agent.get("webhook_secret")
     if not secret:
-        return False, "No webhook_secret (save the agent again)."
+        secret = str(uuid.uuid4())
+        config = load_config(user_id)
+        agents = list(config.get("agents", []))
+        idx = next((i for i, a in enumerate(agents) if a.get("id") == slot_id), None)
+        if idx is not None:
+            agents[idx] = {**agents[idx], "webhook_secret": secret}
+            config["agents"] = agents
+            save_config(user_id, config)
+        index = storage_read_json_global(WEBHOOK_INDEX_REL, {})
+        if not isinstance(index, dict):
+            index = {}
+        index[secret] = {"user_id": user_id, "slot_id": slot_id}
+        storage_write_json_global(WEBHOOK_INDEX_REL, index)
     token = (agent.get("telegram_bot_token") or "").strip()
     if not token:
         return False, "Telegram Bot Token is missing."

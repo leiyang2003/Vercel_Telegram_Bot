@@ -39,12 +39,12 @@ def _read_blob(path: str) -> Optional[bytes]:
 
 
 def _write_blob(path: str, data: bytes) -> bool:
-    """写入 Blob。成功返回 True，失败抛出异常（带原始错误信息）"""
+    """写入 Blob。成功返回 True，失败抛出异常（带原始错误信息）。允许覆盖已存在的同名文件。"""
     if not _use_blob:
         return False
     try:
         import vercel_blob
-        vercel_blob.put(path, data)
+        vercel_blob.put(path, data, {"allowOverwrite": "true"})
         return True
     except Exception as e:
         raise RuntimeError(f"Blob write failed for {path}: {e}") from e
