@@ -292,11 +292,13 @@ def register_webhook(user_id: str, slot_id: str, base_url: str) -> tuple[bool, s
             agents[idx] = {**agents[idx], "webhook_secret": secret}
             config["agents"] = agents
             save_config(user_id, config)
-        index = storage_read_json_global(WEBHOOK_INDEX_REL, {})
-        if not isinstance(index, dict):
-            index = {}
-        index[secret] = {"user_id": user_id, "slot_id": slot_id}
-        storage_write_json_global(WEBHOOK_INDEX_REL, index)
+
+    # Always sync secret → user/slot mapping in global index.
+    index = storage_read_json_global(WEBHOOK_INDEX_REL, {})
+    if not isinstance(index, dict):
+        index = {}
+    index[secret] = {"user_id": user_id, "slot_id": slot_id}
+    storage_write_json_global(WEBHOOK_INDEX_REL, index)
     token = (agent.get("telegram_bot_token") or "").strip()
     if not token:
         return False, "Telegram Bot Token is missing."
